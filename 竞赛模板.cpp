@@ -19,9 +19,9 @@ void xin(char &c) {c=getchar();}
 void xout(int n) {printf("%d", n);}
 void xout(ll n) {printf("%lld", n);}
 void xout(float n) {printf("%f", n);}
-void xout(float n, int d) {char s[]=".0f";s[1]=d+'0';printf(s, n);}
+void xout(float n, int d) {char s[]="%.0f";s[2]=d+'0';printf(s, n);}
 void xout(double n) {printf("%lf", n);}
-void xout(double n, int d) {char s[]=".0lf";s[1]=d+'0';printf(s, n);}
+void xout(double n, int d) {char s[]="%.0lf";s[2]=d+'0';printf(s, n);}
 void xout(const string &s) {printf("%s", &(s[0]));}
 void xout(const char *s) {printf("%s", s);}
 void xout(char c) {putchar(c);}
