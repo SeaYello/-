@@ -110,4 +110,33 @@ vector<ll> get_primes(int n) {
     return ret;
 }
 
+template<typename T> vector<T> dedup(vector<T> v) {
+    set<T> s(v.begin(),v.end());
+    return vector<T>(s.begin(),s.end());
+}
+
+string dedup(string v) {
+    set<char> s(v.begin(),v.end());
+    return string(s.begin(),s.end());
+}
+
+int log2(ll x) {
+    int ret=0;
+    while(x>>=1) ret++;
+    return ret;
+}
+
+template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) {
+    int n = v.size(), m = log2(n)+1;
+    vector<vector<T>> ret(m);
+    ret[0] = v;
+    rep(i,1,m-1) rep(j,0,n-(1<<i)) ret[i].push_back(sel(ret[i-1][j],ret[i-1][j+(1<<(i-1))]));
+    return ret;
+}
+
+template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T a, T b)) {
+    int lay = log2(r-l+1), wid=1<<lay;
+    return sel(st[lay][l],st[lay][r-wid+1]);
+}
+
 /////////////////////////////////////////////////////
