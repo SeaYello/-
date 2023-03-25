@@ -5,35 +5,11 @@ typedef unsigned long long ull;
 #define rep(x,y,z) for(ll x=y;x<=z;x++)
 #define xa (x+a[i])
 #define yb (y+b[i])
+
 struct point{
     ll x, y;
     bool operator<(const point &a) const { return x<a.x?1:(y<a.y); }
 };
-
-void xin(int &n) {scanf("%d", &n);}
-void xin(ll &n) {scanf("%lld", &n);}
-void xin(float &n) {scanf("%f", &n);}
-void xin(double &n) {scanf("%lf", &n);}
-void xin(string &s) {cin>>s;}
-void xin(char &c) {c=getchar();}
-void xout(int n) {printf("%d", n);}
-void xout(ll n) {printf("%lld", n);}
-void xout(ull n) {printf("%llu", n);}
-void xout(float n) {printf("%f", n);}
-void xout(float n, int d) {char s[]="%.0f";s[2]=d+'0';printf(s, n);}
-void xout(double n) {printf("%lf", n);}
-void xout(double n, int d) {char s[]="%.0lf";s[2]=d+'0';printf(s, n);}
-void xout(const string &s) {printf("%s", &(s[0]));}
-void xout(const char *s) {printf("%s", s);}
-void xout(char c) {putchar(c);}
-#define xendl putchar('\n')
-template<typename T> void xout(const vector<T> &v) {for(auto e:v)xout(e),xout(',');xendl;}
-
-vector<vector<ll>> read_mat(int n, int m) {
-    vector<vector<ll>> ret;
-    rep(i,0,n-1) rep(j,0,m-1) xin(ret[i][j]);
-    return ret;
-}
 
 template<typename T> T bisel(bool (*f)(T x), T l, T r) {
     while(r-l>1) {
@@ -142,9 +118,10 @@ template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T 
 
 template<typename T> T backpack(T tv, vector<T> &w, vector<T> &v) {
     vector<ll> dp(tv+1);
-    rep(i,0,w.size()-1) {
+    rep(i,0,(int)w.size()-1) {
         for(int j=tv;j>=0;j--) {
-            ll a = dp[j], b = j-w[i]<0?0:dp[j-w[i]]+v[i];
+            ll a = dp[j];
+            ll b = (j-w[i])<0?0:(dp[j-w[i]]+v[i]);
             dp[j]=max(a,b);
         }
     }
@@ -186,6 +163,18 @@ string _ull2str(const vector<ull> &v) {
     return ret;
 }
 
+int xcmp(const string &a, const string &b) {
+    if(a.size()!=b.size()) return a.size()>b.size()?1:-1;
+    rep(i,0,a.size()-1) if(a[i]!=b[i]) return a[i]>b[i]?1:-1;
+    return 0;
+}
+
+void rm_leading0(string &a) {
+    int p=0;
+    while(a[p]=='0'&&p<a.size()-1) p++;
+    if(p) a=a.substr(p);
+}
+
 vector<ull> _xadd(const vector<ull> &a, const vector<ull> &b) {
     vector<ull> ret;
     ret.reserve(max(a.size(),b.size())+1);
@@ -202,22 +191,43 @@ vector<ull> _xadd(const vector<ull> &a, const vector<ull> &b) {
     return ret;
 }
 
-string xadd(const string &a, const string &b) {
+string xadd(string a, string b) {
+    rm_leading0(a), rm_leading0(b);
     string ret;
     ret.reserve(max(a.size(),b.size())+1);
     int carry=0, i=a.size()-1, j=b.size()-1;
     while(i>=0||j>=0) {
         int d1=i<0?0:a[i]-'0', d2=j<0?0:b[j]-'0', sum=d1+d2+carry;
-        ret.push_back(sum%10+'0');
+        ret+=sum%10+'0';
         carry = sum/10;
         i--,j--;
     }
-    if(carry) ret += '1';
+    if(carry) ret+='1';
+    reverse(ret.begin(),ret.end());
+    return ret;
+}
+
+string xsub(string a, string b) {
+    rm_leading0(a), rm_leading0(b);
+    int pos=0, minus, carry=0;
+    if(minus=xcmp(b,a)==1) swap(a,b);
+    string ret;
+    ret.reserve(a.size());
+    int i=a.size()-1,j=b.size()-1;
+    while(i>=0) {
+        int sum=a[i]-'0'-(j<0?0:(b[j]-'0'))+carry;
+        carry=sum>=0?0:-1;
+        ret.push_back((sum+10)%10+'0');
+        i--,j--;
+    }
+    while(ret.back()=='0' && ret.size()>1) ret.pop_back();
+    if(minus) ret+='-';
     reverse(ret.begin(),ret.end());
     return ret;
 }
 
 vector<ull> _xmul(vector<ull> v, ull n) {
+    if(!n) return vector<ull>{0};
     ull carry=0,sum;
     for(int i=v.size()-1;i>=0;i--) {
         sum=v[i]*n+carry;
@@ -228,7 +238,8 @@ vector<ull> _xmul(vector<ull> v, ull n) {
     return v;
 }
 
-string xmul(const string &a, ull n) {
+string xmul(string a, ull n) {
+    rm_leading0(a);
     return _ull2str(_xmul(_str2ull(a),n));
 }
 
@@ -245,6 +256,58 @@ vector<ull> _xmul(const vector<ull> &a, const vector<ull> &b) {
 
 string xmul(const string &a, const string &b) {
     return _ull2str(_xmul(_str2ull(a),_str2ull(b)));
+}
+
+vector<ull> _xpow(vector<ull> a, ull k) {
+    vector<ull> ret{1};
+    while(k) {
+        if(k&1) ret=_xmul(ret,a);
+        a=_xmul(a,a);
+        k>>=1;
+    }
+    return ret;
+}
+
+string xpow(string a, ull k) {
+    string ret="1";
+    while(k) {
+        if(k&1) ret=xmul(ret,a);
+        a=xmul(a,a);
+        k>>=1;
+    }
+    return ret;
+}
+
+string xfac(int n) {
+    ull a[]{2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,73,79};
+    ull b[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    vector<ull> ret1={1},ret2={1},ret3={1};
+    ull tmp=1;
+    rep(i,2,n) {
+        int j=i;
+        bool go=true;
+        while(go) {
+            go=false;
+            rep(x,0,19) {
+                if(j<a[x]) break;
+                if(j%a[x]==0) {
+                    b[x]++;
+                    j/=a[x];
+                    go=true;
+                }
+            }
+        }
+        auto &r=ret1.size()<ret2.size()?ret1:ret2;
+        if((double)tmp*j<4.2e9) {
+            tmp*=j;
+        } else {
+            r=_xmul(r,tmp);
+            tmp=j;
+        }
+    }
+    ret1=_xmul(ret1,tmp);
+    rep(i,0,19) ret3=_xmul(ret3,_xpow(vector<ull>{a[i]},b[i]));
+    return _ull2str(_xmul(_xmul(ret1,ret2),ret3));
 }
 
 /////////////////////////////////////////////////////
