@@ -1,119 +1,120 @@
-#include <bits/stdc++.h>
+#include<iostream>
+#include<vector>
+#include<stack>
+#include<set>
+#include<unordered_set>
+#include<map>
+#include<unordered_map>
+#include<numeric>
+#include<math.h>
+#include<algorithm>
+#include<queue>
+#include<string>
+#include<random>
 using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
-#define rep(x,y,z) for(ll x=y;x<=z;x++)
 
-template<typename T> T bisel(bool (*f)(T x), T l, T r) {
-    while(r-l>1) {
-        ll m=(l+r)/2;
-        (f(l)==f(m)?l:r) = m;
-    } return l;
-}
+//////// DATA STRUCTURE ////////
 
-bool is_prime(ll x) {
-    int arr[] {2,3,5,7,11,13,17,23};
-	if(x<=1) return 0; 
-	int k; 
-	ll pre,a,cur;  
-	rep(i,0,7) {
-		if(x==arr[i]) return 1;          
-		for(cur=x-1,k=0;cur%2==0;cur>>=1) ++k;              
-		pre=a=qpow(arr[i],cur,x);              
-		rep(j,1,k) {  
-			a=(a*a)%x;                 
-			if(a==1&&pre!=1&&pre!=x-1) return 0; 
-			pre=a;   
-		}
-		if(a!=1) return 0;    
-	}   
-	return 1;   
-}
-
-vector<ll> get_primes(int n) {
-    vector<ll> ret;
-    vector<int> check(n+1);
-    rep(i,2,n) {
-        if(!check[i]) ret.push_back(i);
-        rep(j,0,ret.size()-1) {
-            if(i*ret[j]>n) break;
-            check[i*ret[j]]=1;
-            if(i%ret[j]==0) break;
-        }
-    }
-    return ret;
-}
-
-template<typename T> vector<T> dedup(vector<T> v) {
-    set<T> s(v.begin(),v.end());
-    return vector<T>(s.begin(),s.end());
-}
-
-string dedup(string v) {
-    set<char> s(v.begin(),v.end());
-    return string(s.begin(),s.end());
-}
-
-int log2(ll x) {
+int log2d(ll x) {
     int ret=0;
     while(x>>=1) ret++;
     return ret;
 }
 
 template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) {
-    int n = v.size(), m = log2(n)+1;
+    int n = v.size(), m = log2d(n)+1;
     vector<vector<T>> ret(m);
     ret[0] = v;
-    rep(i,1,m-1) rep(j,0,n-(1<<i)) ret[i].push_back(sel(ret[i-1][j],ret[i-1][j+(1<<(i-1))]));
+    for(int i=1;i<m;i++) for(int j=0;j<=n-(1<<i);j++) ret[i].push_back(sel(ret[i-1][j],ret[i-1][j+(1<<(i-1))]));
     return ret;
 }
 
 template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T a, T b)) {
-    int lay = log2(r-l+1), wid=1<<lay;
+    int lay = log2d(r-l+1), wid=1<<lay;
     return sel(st[lay][l],st[lay][r-wid+1]);
 }
 
-template<typename T> T backpack(T tv, vector<T> &w, vector<T> &v) {
-    vector<ll> dp(tv+1);
-    rep(i,0,(int)w.size()-1) {
-        for(int j=tv;j>=0;j--) {
-            ll a = dp[j];
-            ll b = (j-w[i])<0?0:(dp[j-w[i]]+v[i]);
-            dp[j]=max(a,b);
-        }
-    }
-    return dp.back();
-}
+//////// STRING /////////
 
-vector<int> string_search(string s, string p) {
-	ull h1=0,h2=0,b=3242343,bpow=1;
-	vector<int> ret;
-	int n=s.size(), m=p.size();
-	s+='x';
-	for(int i=m-1;i>=0;i--) {
-		h1+=bpow*s[i];
-		h2+=bpow*p[i];
-		bpow*=b;
-	}
-	for(int i=0;i<n-m+1;i++) {
-		if(h1==h2) ret.push_back(i);
-		h1=h1*b+s[i+m];
-		h1-=s[i]*bpow;
+vector<int> kmp_next(const string &t) {
+	int n=t.size()+1;
+	vector<int> ret(n);
+	for(int i=2;i<n;i++) {
+		int j=ret[i-1];
+		while(t[i-1]!=t[j] && j) {
+			j=ret[j];
+		}
+		ret[i]=j+(t[i-1]==t[j]);
 	}
 	return ret;
 }
+
+int kmp_first(const string &s, const string &t) {
+	int n=s.size(),m=t.size(),i=0,j=0;
+	auto ne=kmp_next(t);
+	while(i<n) {
+		if(s[i]==t[j]) {
+			i++;j++;
+			if(j==m) {
+				return i-m;
+			}
+		} else {
+			j=ne[j];
+		}
+	}
+	return -1;
+}
+
+vector<int> kmp_all(const string &s, const string &t) {
+	int n=s.size(),m=t.size(),i=0,j=0;
+	auto ne=kmp_next(t);
+	vector<int> ret;
+	while(i<n) {
+		if(s[i]==t[j]) {
+			i++;j++;
+			if(j==m) {
+				ret.push_back(i-m);
+				j=0;
+			}
+		} else {
+			j=ne[j];
+		}
+	}
+	return ret;
+}
+
+vector<int> kmp_all_overlap(const string &s, const string &t) {
+	int n=s.size(),m=t.size(),i=0,j=0;
+	auto ne=kmp_next(t);
+	vector<int> ret;
+	while(i<n) {
+		if(s[i]==t[j]) {
+			i++;j++;
+			if(j==m) {
+				ret.push_back(i-m);
+				j=0;
+				i=i-m+1;
+			}
+		} else {
+			if(j) j=ne[j];
+			else i++;
+		}
+	}
+	return ret;
+}
+
+/////// MATH /////////
 
 ll qpow(ll a, ll n, ll p) {
 	ll ret=1;
-	for(int i=0;i<30;i++) {
-		if(((n&(1<<i))>>i)) ret=ret*a%p;
+	while(n) {
+		if(n%2) ret=ret*a%p;
 		a=a*a%p;
+		n/=2;
 	}
 	return ret;
-}
-
-ll inv(ll a, ll p) {
-	return qpow(a,p-2,p);
 }
 
 ll C(ll n, ll m, ll p) {
@@ -122,8 +123,43 @@ ll C(ll n, ll m, ll p) {
 		a=a*(n-i+1)%p;
 		b=b*i%p;
 	}
-
-	return a*inv(b,p)%p;
+	return a*qpow(b,p-2,p)%p;
 }
 
-/////////////////////////////////////////////////////
+bool miller_rabin(ll n) {
+	if(n<=1) return false;
+	int p[] {2,3,5,7};
+	for(auto a:p) {
+		if(a>=n) break;
+		int k=0;
+		ll d=n-1;
+		while(d%2==0) {
+			k++;
+			d/=2;
+		}
+		ll x=qpow(a,d,n);
+		while(k--) {
+			ll y=x*x%n;
+			if(y==1 && x!=1 && x!=n-1) return false;
+			x=y;
+		}
+		if(x!=1) return false;
+	}
+	return true;
+}
+
+vector<ll> linear_sieve(int n) {
+    vector<ll> ret;
+    vector<int> check(n+1);
+    for(int i=2;i<=n;i++) {
+        if(!check[i]) ret.push_back(i);
+        for(int j=0;j<ret.size();j++) {
+            if(i*ret[j]>n) break;
+            check[i*ret[j]]=1;
+            if(i%ret[j]==0) break;
+        }
+    }
+    return ret;
+}
+
+////////////////////////////
