@@ -17,11 +17,7 @@ typedef unsigned long long ull;
 
 //////// DATA STRUCTURE ////////
 
-int log2d(ll x) {
-    int ret=0;
-    while(x>>=1) ret++;
-    return ret;
-}
+// sparse table
 
 template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) {
     int n = v.size(), m = log2d(n)+1;
@@ -34,6 +30,107 @@ template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) 
 template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T a, T b)) {
     int lay = log2d(r-l+1), wid=1<<lay;
     return sel(st[lay][l],st[lay][r-wid+1]);
+}
+
+// segment tree (min query & add modify)
+
+struct Seg {
+    ll val=1e12,lazy=0;
+    int l=0,r=0;
+};
+
+int n;
+vector<ll> v;
+vector<Seg> seg;
+
+void build_seg(int idx,int l,int r) {
+
+    seg[idx].l=l;
+    seg[idx].r=r;
+    if(l==r) {
+        seg[idx].val=v[l];
+    } else {
+        int mid=(l+r)/2;
+        build_seg(idx*2+1,l,mid);
+        build_seg(idx*2+2,mid+1,r);
+        seg[idx].val=min(seg[idx*2+1].val,seg[idx*2+2].val);
+    }
+}
+
+void update_seg(int idx) {
+    while(idx) {
+        idx=(idx-1)/2;
+        seg[idx].val=min(seg[idx*2+1].val,seg[idx*2+2].val);
+    }
+}
+
+void push_seg(int idx) {
+    if(seg[idx].l<seg[idx].r) {
+        seg[idx*2+1].lazy+=seg[idx].lazy;
+        seg[idx*2+1].val+=seg[idx].lazy;
+        seg[idx*2+2].lazy+=seg[idx].lazy;
+        seg[idx*2+2].val+=seg[idx].lazy;
+    }
+    seg[idx].lazy=0;
+}
+
+void add_seg(int idx,int l,int r,ll x) {
+    if(l>r) return;
+    if(seg[idx].l==l && seg[idx].r==r) {
+        seg[idx].val+=x;
+        seg[idx].lazy+=x;
+        update_seg(idx);
+    } else {
+        int mid=(seg[idx].l+seg[idx].r)/2;
+        add_seg(idx*2+1,l,min(r,mid),x);
+        add_seg(idx*2+2,max(l,mid+1),r,x);
+    }
+}
+
+ll min_seg(int idx,int l,int r) {
+    if(l>r) return 1e12;
+    if(seg[idx].l==l && seg[idx].r==r) {
+        return seg[idx].val;
+    }
+    push_seg(idx);
+    int mid=(seg[idx].l+seg[idx].r)/2;
+    return min(min_seg(idx*2+1,l,min(r,mid)),min_seg(idx*2+2,max(l,mid+1),r));
+}
+
+// dijkstra
+
+int n;
+
+double dijkstra(vector<vector<pair<int,double>>> g,int s,int t) {
+    vector<double> dp(n,1e12); dp[s]=0;
+    vector<int> vis(n);
+    priority_queue<pair<double,int>,vector<pair<double,int>>,greater<pair<double,int>>> pq; pq.push({0,s});
+    while(pq.size()) {
+        int curr=pq.top().second; pq.pop();
+        if(vis[curr]++) continue;
+        for(auto [nv,w]:g[curr]) {
+            dp[nv]=min(dp[nv],dp[curr]+w);
+            pq.push({dp[nv],nv});
+        }
+    }
+    return dp[t];
+}
+
+// bellman_ford
+
+int n;
+
+double bellman_ford(vector<vector<pair<int,double>>> g,int s,int t) {
+    vector<double> dp(n,1e12);
+    dp[s]=0;
+    for(int i=0;i<n-1;i++) {
+        for(int j=0;j<n;j++) {
+            for(auto [nv,w]:g[j]) {
+                dp[nv]=min(dp[nv],dp[j]+w);
+            }
+        }
+    }
+    return dp[t];
 }
 
 //////// STRING /////////
