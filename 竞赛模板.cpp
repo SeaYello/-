@@ -11,9 +11,12 @@
 #include<queue>
 #include<string>
 #include<random>
+#include<time.h>
+#include<cstring>
 using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
+#define endl '\n'
 
 //////// DATA STRUCTURE ////////
 
