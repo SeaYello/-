@@ -16,6 +16,7 @@
 using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
+typedef long double ld;
 #define endl '\n'
 
 //////// DATA STRUCTURE ////////
@@ -205,25 +206,27 @@ vector<int> kmp_all_overlap(const string &s, const string &t) {
 	return ret;
 }
 
-/////// MATH /////////
+///////// MATH //////////
 
-ll qpow(ll a, ll n, ll p) {
+ll MOD;
+
+ll qpow(ll a, ll n) {
 	ll ret=1;
 	while(n) {
-		if(n%2) ret=ret*a%p;
-		a=a*a%p;
+		if(n%2) ret=ret*a%MOD;
+		a=a*a%MOD;
 		n/=2;
 	}
 	return ret;
 }
 
-ll C(ll n, ll m, ll p) {
+ll C(ll n, ll m) {
 	ll a=1,b=1;
 	for(int i=1;i<=m;i++) {
-		a=a*(n-i+1)%p;
-		b=b*i%p;
+		a=a*(n-i+1)%MOD;
+		b=b*i%MOD;
 	}
-	return a*qpow(b,p-2,p)%p;
+	return a*qpow(b,MOD-2)%MOD;
 }
 
 bool miller_rabin(ll n) {
@@ -237,7 +240,7 @@ bool miller_rabin(ll n) {
 			k++;
 			d/=2;
 		}
-		ll x=qpow(a,d,n);
+		ll x=qpow(a,d);
 		while(k--) {
 			ll y=x*x%n;
 			if(y==1 && x!=1 && x!=n-1) return false;
@@ -262,4 +265,85 @@ vector<ll> linear_sieve(int n) {
     return ret;
 }
 
-////////////////////////////
+// FFT
+
+struct CN {
+    ld a=0,b=0;
+};
+
+CN operator+(CN a, CN b) {
+    a.a+=b.a, a.b+=b.b;
+    return a;
+}
+
+CN operator*(CN a, CN b) {
+    CN c {a.a*b.a-a.b*b.b, a.a*b.b+a.b*b.a};
+    return c;
+}
+
+const ld PI=3.14159265;
+vector<CN> FFT(vector<CN> v) {
+    int n=v.size();
+    if(n==1) return v;
+    vector<CN> v1,v2;
+    for(int i=0;i<n;i++) {
+        (i%2?v1:v2).push_back(v[i]);
+    }
+    v1=FFT(v1),v2=FFT(v2);
+    for(int i=0;i<n;i++) {
+        CN co {cosl(2*PI*i/n),sinl(2*PI*i/n)};
+        v[i]=v1[i%(n/2)]*co+v2[i%(n/2)];
+    }
+    return v;
+}
+
+vector<CN> invFFT(vector<CN> v) {
+    reverse(v.begin(),v.end());
+    v=FFT(v);
+    int n=v.size();
+    for(int i=0;i<n;i++) {
+        CN m{cosl(2*PI*i/n)/n,sinl(2*PI*i/n)/n};
+        v[i]=v[i]*m;
+    }
+    return v;
+}
+
+vector<ll> FFT_poly(vector<ll> a,vector<ll> b) {
+    int n=1<<(int)ceil(log2(a.size()+b.size()));
+    a.resize(n),b.resize(n);
+    vector<CN> A(n),B(n);
+    for(int i=0;i<n;i++) {
+        A[i].a=a[i];
+        B[i].a=b[i];
+    }
+    A=FFT(A);
+    B=FFT(B);
+    for(int i=0;i<n;i++) {
+        A[i]=A[i]*B[i];
+    }
+    A=invFFT(A);
+    for(int i=0;i<n;i++) {
+        a[i]=roundl(A[i].a);
+    }
+    while(!a.back() && a.size()>1) a.pop_back();
+    return a;
+}
+
+string FFT_num(string a,string b) {
+    int n=a.size(),m=b.size();
+    vector<ll> A(n),B(m);
+    for(int i=0;i<n;i++) A[i]=a[n-1-i]-'0';
+    for(int i=0;i<m;i++) B[i]=b[m-1-i]-'0';
+    A=FFT_poly(A,B);
+    A.resize(n=A.size()+10);
+    for(int i=0;i+1<n;i++) {
+        A[i+1]+=A[i]/10;
+        A[i]=A[i]%10;
+    }
+    while(!A.back() && n>1) A.pop_back(),n--;
+    string ret;
+    for(int i=0;i<n;i++) {
+        ret+=A[n-1-i]+'0';
+    }
+    return ret;
+}
