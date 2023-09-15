@@ -19,9 +19,9 @@ typedef unsigned long long ull;
 typedef long double ld;
 #define endl '\n'
 
-//////// DATA STRUCTURE ////////
+/////////////////// DATA STRUCTURE //////////////////
 
-// sparse table
+//-- sparse table
 
 template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) {
     int n = v.size(), m = log2d(n)+1;
@@ -36,7 +36,7 @@ template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T 
     return sel(st[lay][l],st[lay][r-wid+1]);
 }
 
-// segment tree (min query & add modify)
+//-- segment tree (min query & add modify)
 
 struct Seg {
     ll val=1e12,lazy=0;
@@ -101,9 +101,7 @@ ll min_seg(int idx,int l,int r) {
     return min(min_seg(idx*2+1,l,min(r,mid)),min_seg(idx*2+2,max(l,mid+1),r));
 }
 
-// dijkstra
-
-int n;
+//-- dijkstra
 
 double dijkstra(vector<vector<pair<int,double>>> g,int s,int t) {
     vector<double> dp(n,1e12); dp[s]=0;
@@ -120,9 +118,7 @@ double dijkstra(vector<vector<pair<int,double>>> g,int s,int t) {
     return dp[t];
 }
 
-// bellman_ford
-
-int n;
+//-- bellman_ford
 
 double bellman_ford(vector<vector<pair<int,double>>> g,int s,int t) {
     vector<double> dp(n,1e12);
@@ -137,7 +133,9 @@ double bellman_ford(vector<vector<pair<int,double>>> g,int s,int t) {
     return dp[t];
 }
 
-//////// STRING /////////
+////////////////////////// STRING //////////////////////////
+
+//-- kmp
 
 vector<int> kmp_next(const string &t) {
 	int n=t.size()+1;
@@ -206,9 +204,44 @@ vector<int> kmp_all_overlap(const string &s, const string &t) {
 	return ret;
 }
 
-///////// MATH //////////
+/////////////////////// MATH /////////////////////////
+
+//-- factorization
 
 ll MOD;
+vector<ll> factorize(ll x) {
+    vector<ll> ret;
+    for(ll i=2;i*i<=x;i++) {
+        if(x%i==0) {
+            ret.push_back(i);
+            x/=i;
+            i=1;
+        }
+    }
+    if(x!=1) ret.push_back(x);
+    sort(ret.begin(),ret.end());
+    return ret;
+}
+
+//-- count the number of integers in [1,m] and coprime to every v[i]
+
+ll coprime_count(ll m,vector<ll> v) {
+    int n=v.size();
+    ll ret=0;
+    for(ll i=1;i<(1<<n);i++) {
+        ll base=1,cnt=-1;
+        for(ll j=0;j<n;j++) {
+            if(i&(1<<j)) {
+                base*=v[j];
+                cnt*=-1;
+            }
+        }
+        ret+=m/base*cnt;
+    }
+    return m-ret;
+}
+
+//-- quick exponentiation
 
 ll qpow(ll a, ll n) {
 	ll ret=1;
@@ -220,14 +253,28 @@ ll qpow(ll a, ll n) {
 	return ret;
 }
 
-ll C(ll n, ll m) {
-	ll a=1,b=1;
-	for(int i=1;i<=m;i++) {
-		a=a*(n-i+1)%MOD;
-		b=b*i%MOD;
-	}
-	return a*qpow(b,MOD-2)%MOD;
+//-- quick factorial
+
+vector<ll> F,iF;
+void initF(int n) {
+    F=iF=vector<ll>(n+1);
+    F[0]=1;
+    for(int i=1;i<=n;i++) {
+        F[i]=F[i-1]*i%MOD;
+    }
+    iF[n]=qpow(F[n],MOD-2);
+    for(int i=n-1;i>=0;i--) {
+        iF[i]=iF[i+1]*(i+1)%MOD;
+    }
 }
+
+//-- binomial coefficient
+
+ll C(ll n, ll m) {
+	return n<m?0:F[n]*iF[m]%MOD*iF[n-m]%MOD;
+}
+
+//-- miller rabin primality test
 
 bool miller_rabin(ll n) {
 	if(n<=1) return false;
@@ -251,6 +298,8 @@ bool miller_rabin(ll n) {
 	return true;
 }
 
+//-- linear sieve
+
 vector<ll> linear_sieve(int n) {
     vector<ll> ret;
     vector<int> check(n+1);
@@ -265,22 +314,53 @@ vector<ll> linear_sieve(int n) {
     return ret;
 }
 
-// FFT
+//-- extended euclidean
 
+ll exgcd(ll a,ll b,ll &x,ll &y)
+{
+    if(!b) {
+        x=1,y=0;
+        return a;
+    }
+    ll ans=exgcd(b,a%b,x,y);
+    x-=a/b*y;
+    swap(x,y);
+    return ans;
+}
+
+//-- find inverse modulo non-prime
+
+ll mod_inverse(ll a,ll m) {
+    ll x,y,ans,gcd;
+    gcd=exgcd(a,m,x,y);
+    if(1%gcd!=0) return -1;
+    x=x*1/gcd;
+    m=abs(m);
+    ans=x%m;
+    if(ans<=0) ans=ans+m;
+    return ans;
+}
+
+//-- FFT
+
+// complex number
 struct CN {
     ld a=0,b=0;
 };
 
+// complex addition
 CN operator+(CN a, CN b) {
     a.a+=b.a, a.b+=b.b;
     return a;
 }
 
+// complex multiplication
 CN operator*(CN a, CN b) {
     CN c {a.a*b.a-a.b*b.b, a.a*b.b+a.b*b.a};
     return c;
 }
 
+// FFT for a polynomimal
 const ld PI=3.14159265;
 vector<CN> FFT(vector<CN> v) {
     int n=v.size();
@@ -297,6 +377,7 @@ vector<CN> FFT(vector<CN> v) {
     return v;
 }
 
+// inverse FFT for a polynomial
 vector<CN> invFFT(vector<CN> v) {
     reverse(v.begin(),v.end());
     v=FFT(v);
@@ -308,6 +389,7 @@ vector<CN> invFFT(vector<CN> v) {
     return v;
 }
 
+// polynomial multiplication
 vector<ll> FFT_poly(vector<ll> a,vector<ll> b) {
     int n=1<<(int)ceil(log2(a.size()+b.size()));
     a.resize(n),b.resize(n);
@@ -323,12 +405,13 @@ vector<ll> FFT_poly(vector<ll> a,vector<ll> b) {
     }
     A=invFFT(A);
     for(int i=0;i<n;i++) {
-        a[i]=roundl(A[i].a);
+        a[i]=A[i].a+0.1;
     }
     while(!a.back() && a.size()>1) a.pop_back();
     return a;
 }
 
+// large integer multiplication
 string FFT_num(string a,string b) {
     int n=a.size(),m=b.size();
     vector<ll> A(n),B(m);
