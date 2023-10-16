@@ -1,3 +1,8 @@
+//-- ICPC竞赛模版
+//-- 东莞理工学院 黄海
+
+/////////////////// Heading ////////////////////
+
 #include<iostream>
 #include<vector>
 #include<stack>
@@ -24,7 +29,7 @@ typedef long double ld;
 //-- sparse table
 
 template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) {
-    int n = v.size(), m = log2d(n)+1;
+    int n = v.size(), m = log2(n)+1;
     vector<vector<T>> ret(m);
     ret[0] = v;
     for(int i=1;i<m;i++) for(int j=0;j<=n-(1<<i);j++) ret[i].push_back(sel(ret[i-1][j],ret[i-1][j+(1<<(i-1))]));
@@ -32,73 +37,67 @@ template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) 
 }
 
 template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T a, T b)) {
-    int lay = log2d(r-l+1), wid=1<<lay;
+    int lay = log2(r-l+1), wid=1<<lay;
     return sel(st[lay][l],st[lay][r-wid+1]);
-}
 
-//-- segment tree (min query & add modify)
+//-- segment tree (sum query & add modify)
 
 struct Seg {
-    ll val=1e12,lazy=0;
-    int l=0,r=0;
+    ll val,lazy;
+    int l,r,len;
 };
 
 int n;
 vector<ll> v;
 vector<Seg> seg;
 
-void build_seg(int idx,int l,int r) {
-
-    seg[idx].l=l;
-    seg[idx].r=r;
+void init(int curr, int l, int r) {
+    seg[curr].l=l;
+    seg[curr].r=r;
+    seg[curr].len=r-l+1;
     if(l==r) {
-        seg[idx].val=v[l];
+        seg[curr].val=v[l];
     } else {
         int mid=(l+r)/2;
-        build_seg(idx*2+1,l,mid);
-        build_seg(idx*2+2,mid+1,r);
-        seg[idx].val=min(seg[idx*2+1].val,seg[idx*2+2].val);
+        init(curr*2+1,l,mid);
+        init(curr*2+2,mid+1,r);
+        seg[curr].val=seg[curr*2+1].val+seg[curr*2+2].val;
     }
 }
 
-void update_seg(int idx) {
-    while(idx) {
-        idx=(idx-1)/2;
-        seg[idx].val=min(seg[idx*2+1].val,seg[idx*2+2].val);
+void pushdown(int curr) {
+    if(curr*2+2<4*n) {
+        seg[curr*2+1].lazy+=seg[curr].lazy;
+        seg[curr*2+2].lazy+=seg[curr].lazy;
+        seg[curr*2+1].val+=seg[curr].lazy*seg[curr*2+1].len;
+        seg[curr*2+2].val+=seg[curr].lazy*seg[curr*2+2].len;
     }
+    seg[curr].lazy=0;
 }
 
-void push_seg(int idx) {
-    if(seg[idx].l<seg[idx].r) {
-        seg[idx*2+1].lazy+=seg[idx].lazy;
-        seg[idx*2+1].val+=seg[idx].lazy;
-        seg[idx*2+2].lazy+=seg[idx].lazy;
-        seg[idx*2+2].val+=seg[idx].lazy;
-    }
-    seg[idx].lazy=0;
-}
-
-void add_seg(int idx,int l,int r,ll x) {
-    if(l>r) return;
-    if(seg[idx].l==l && seg[idx].r==r) {
-        seg[idx].val+=x;
-        seg[idx].lazy+=x;
-        update_seg(idx);
+ll sum(int curr, int l, int r) {
+    if(l>r) return 0;
+    pushdown(curr);
+    int mid=(seg[curr].l+seg[curr].r)/2;
+    if(seg[curr].l==l && seg[curr].r==r) {
+        return seg[curr].val;
     } else {
-        int mid=(seg[idx].l+seg[idx].r)/2;
-        add_seg(idx*2+1,l,min(r,mid),x);
-        add_seg(idx*2+2,max(l,mid+1),r,x);
+        return sum(curr*2+1,l,min(mid,r))+sum(curr*2+2,max(l,mid+1),r);
     }
 }
 
-ll min_seg(int idx,int l,int r) {
-    if(l>r) return 1e12;
-    if(seg[idx].l==l && seg[idx].r==r) {
-        return seg[idx].val;
+void modify(int curr, int l, int r, ll x) {
+    if(l>r) return;
+    pushdown(curr);
+    if(seg[curr].l==l && seg[curr].r==r) {
+        seg[curr].val+=x*seg[curr].len;
+        seg[curr].lazy+=x;
+    } else {
+        int mid=(seg[curr].l+seg[curr].r)/2;
+        modify(curr*2+1,l,min(mid,r),x);
+        modify(curr*2+2,max(l,mid+1),r,x);
+        seg[curr].val=seg[curr*2+1].val+seg[curr*2+2].val;
     }
-    push_seg(idx);
-    int mid=(seg[idx].l+seg[idx].r)/2;
-    return min(min_seg(idx*2+1,l,min(r,mid)),min_seg(idx*2+2,max(l,mid+1),r));
 }
 
 //-- dijkstra
