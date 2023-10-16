@@ -78,10 +78,10 @@ void pushdown(int curr) {
 ll sum(int curr, int l, int r) {
     if(l>r) return 0;
     pushdown(curr);
-    int mid=(seg[curr].l+seg[curr].r)/2;
     if(seg[curr].l==l && seg[curr].r==r) {
         return seg[curr].val;
     } else {
+    	int mid=(seg[curr].l+seg[curr].r)/2;
         return sum(curr*2+1,l,min(mid,r))+sum(curr*2+2,max(l,mid+1),r);
     }
 }
