@@ -18,6 +18,7 @@
 #include<random>
 #include<time.h>
 #include<cstring>
+#include<functional>
 using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
@@ -39,66 +40,65 @@ template<typename T> vector<vector<T>> get_st(vector<T> &v, T (*sel)(T a, T b)) 
 template<typename T> T st_queue(vector<vector<T>> &st, int l, int r, T (*sel)(T a, T b)) {
     int lay = log2(r-l+1), wid=1<<lay;
     return sel(st[lay][l],st[lay][r-wid+1]);
+}
 
-//-- segment tree (sum query & add modify)
+//-- lazy segment tree
 
-struct Seg {
-    ll val,lazy;
-    int l,r,len;
+template<typename bas,typename inf>
+struct LazySegTree {
+    int n;
+    vector<inf> t;
+    vector<int> l,r;
+
+    LazySegTree(vector<bas> v) {
+        n=v.size();
+        t.resize(n*8);
+        l.resize(n*8);
+        r.resize(n*8);
+
+        function<void(int,int,int)> init=[&](int curr,int ll,int rr) {
+            l[curr]=ll;
+            r[curr]=rr;
+            if(ll==rr) t[curr].init(v[ll]);
+            else {
+                int mid=(l[curr]+r[curr])/2;
+                init(curr*2+1,ll,mid);
+                init(curr*2+2,mid+1,rr);
+                t[curr].merge(t[curr*2+1],t[curr*2+2]);
+            }
+        };
+
+        init(0,0,n-1);
+    }
+
+    inf query(int ll, int rr) {
+        function<inf(int,int,int)> q=[&](int curr, int ll, int rr) {
+            if(ll>rr) return inf();
+            t[curr].pushdown(t[curr*2+1],t[curr*2+2]);
+            if(ll==l[curr] && rr==r[curr]) return t[curr];
+            int mid=(l[curr]+r[curr])/2;
+            inf a; a.merge(q(curr*2+1,ll,min(rr,mid)),q(curr*2+2,max(ll,mid+1),rr));
+            return a;
+        };
+        return q(0,ll,rr);
+    }
+
+    void modify(int ll, int rr, bas k) {
+        function<void(int,int,int,bas)> m=[&](int curr, int ll, int rr, bas k) {
+            if(ll>rr) return;
+            t[curr].pushdown(t[curr*2+1],t[curr*2+2]);
+            if(ll==l[curr] && rr==r[curr]) {
+                t[curr].modify(k);
+            } else {
+                int mid=(l[curr]+r[curr])/2;
+                m(curr*2+1,ll,min(rr,mid),k);
+                m(curr*2+2,max(ll,mid+1),rr,k);
+                t[curr].merge(t[curr*2+1],t[curr*2+2]);
+            }
+        };
+        m(0,ll,rr,k);
+    }
 };
-
-int n;
-vector<ll> v;
-vector<Seg> seg;
-
-void init(int curr, int l, int r) {
-    seg[curr].l=l;
-    seg[curr].r=r;
-    seg[curr].len=r-l+1;
-    if(l==r) {
-        seg[curr].val=v[l];
-    } else {
-        int mid=(l+r)/2;
-        init(curr*2+1,l,mid);
-        init(curr*2+2,mid+1,r);
-        seg[curr].val=seg[curr*2+1].val+seg[curr*2+2].val;
-    }
-}
-
-void pushdown(int curr) {
-    if(curr*2+2<4*n) {
-        seg[curr*2+1].lazy+=seg[curr].lazy;
-        seg[curr*2+2].lazy+=seg[curr].lazy;
-        seg[curr*2+1].val+=seg[curr].lazy*seg[curr*2+1].len;
-        seg[curr*2+2].val+=seg[curr].lazy*seg[curr*2+2].len;
-    }
-    seg[curr].lazy=0;
-}
-
-ll sum(int curr, int l, int r) {
-    if(l>r) return 0;
-    pushdown(curr);
-    if(seg[curr].l==l && seg[curr].r==r) {
-        return seg[curr].val;
-    } else {
-    	int mid=(seg[curr].l+seg[curr].r)/2;
-        return sum(curr*2+1,l,min(mid,r))+sum(curr*2+2,max(l,mid+1),r);
-    }
-}
-
-void modify(int curr, int l, int r, ll x) {
-    if(l>r) return;
-    pushdown(curr);
-    if(seg[curr].l==l && seg[curr].r==r) {
-        seg[curr].val+=x*seg[curr].len;
-        seg[curr].lazy+=x;
-    } else {
-        int mid=(seg[curr].l+seg[curr].r)/2;
-        modify(curr*2+1,l,min(mid,r),x);
-        modify(curr*2+2,max(l,mid+1),r,x);
-        seg[curr].val=seg[curr*2+1].val+seg[curr*2+2].val;
-    }
-}
 
 //-- dijkstra
 
